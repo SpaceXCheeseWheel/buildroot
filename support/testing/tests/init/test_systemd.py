@@ -13,7 +13,7 @@ class InitSystemSystemdBase(InitSystemBase):
         BR2_TARGET_GENERIC_GETTY_PORT="ttyAMA0"
         BR2_LINUX_KERNEL=y
         BR2_LINUX_KERNEL_CUSTOM_VERSION=y
-        BR2_LINUX_KERNEL_CUSTOM_VERSION_VALUE="4.11.3"
+        BR2_LINUX_KERNEL_CUSTOM_VERSION_VALUE="4.19.204"
         BR2_LINUX_KERNEL_DEFCONFIG="vexpress"
         BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES="{}"
         BR2_LINUX_KERNEL_DTS_SUPPORT=y
@@ -91,7 +91,6 @@ class TestInitSystemSystemdRwIfupdown(InitSystemSystemdBase):
         """
         BR2_SYSTEM_DHCP="eth0"
         # BR2_PACKAGE_SYSTEMD_NETWORKD is not set
-        # BR2_TARGET_GENERIC_REMOUNT_ROOTFS_RW is not set
         BR2_TARGET_ROOTFS_EXT2=y
         """
 
@@ -106,7 +105,7 @@ class TestInitSystemSystemdRoFull(InitSystemSystemdBase):
         """
         BR2_SYSTEM_DHCP="eth0"
         # BR2_TARGET_GENERIC_REMOUNT_ROOTFS_RW is not set
-        BR2_PACKAGE_SYSTEMD_JOURNAL_GATEWAY=y
+        BR2_PACKAGE_SYSTEMD_JOURNAL_REMOTE=y
         BR2_PACKAGE_SYSTEMD_BACKLIGHT=y
         BR2_PACKAGE_SYSTEMD_BINFMT=y
         BR2_PACKAGE_SYSTEMD_COREDUMP=y
@@ -136,7 +135,7 @@ class TestInitSystemSystemdRwFull(InitSystemSystemdBase):
     config = InitSystemSystemdBase.config + \
         """
         BR2_SYSTEM_DHCP="eth0"
-        BR2_PACKAGE_SYSTEMD_JOURNAL_GATEWAY=y
+        BR2_PACKAGE_SYSTEMD_JOURNAL_REMOTE=y
         BR2_PACKAGE_SYSTEMD_BACKLIGHT=y
         BR2_PACKAGE_SYSTEMD_BINFMT=y
         BR2_PACKAGE_SYSTEMD_COREDUMP=y

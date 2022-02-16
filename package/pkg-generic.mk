@@ -234,6 +234,7 @@ $(BUILD_DIR)/%/.stamp_configured:
 	$(call prepare-per-package-directory,$($(PKG)_FINAL_DEPENDENCIES))
 	@$(call pkg_size_before,$(TARGET_DIR))
 	@$(call pkg_size_before,$(STAGING_DIR),-staging)
+	@$(call pkg_size_before,$(BINARIES_DIR),-images)
 	@$(call pkg_size_before,$(HOST_DIR),-host)
 	$(call fixup-libtool-files,$(NAME),$(STAGING_DIR))
 	$(foreach hook,$($(PKG)_PRE_CONFIGURE_HOOKS),$(call $(hook))$(sep))
@@ -358,6 +359,7 @@ $(BUILD_DIR)/%/.stamp_target_installed:
 $(BUILD_DIR)/%/.stamp_installed:
 	@$(call pkg_size_after,$(TARGET_DIR))
 	@$(call pkg_size_after,$(STAGING_DIR),-staging)
+	@$(call pkg_size_after,$(BINARIES_DIR),-images)
 	@$(call pkg_size_after,$(HOST_DIR),-host)
 	@$(call check_bin_arch)
 	$(Q)touch $@
@@ -518,7 +520,7 @@ ifndef $(2)_SOURCE
  ifdef $(3)_SOURCE
   $(2)_SOURCE = $$($(3)_SOURCE)
  else ifdef $(2)_VERSION
-  $(2)_SOURCE			?= $$($(2)_BASENAME_RAW).tar.gz
+  $(2)_SOURCE			?= $$($(2)_BASENAME_RAW)$$(call pkg_source_ext,$(2))
  endif
 endif
 
@@ -567,6 +569,12 @@ ifneq ($$(filter bzr cvs hg,$$($(2)_SITE_METHOD)),)
 BR_NO_CHECK_HASH_FOR += $$($(2)_SOURCE)
 endif
 
+ifndef $(2)_GIT_SUBMODULES
+ ifdef $(3)_GIT_SUBMODULES
+  $(2)_GIT_SUBMODULES = $$($(3)_GIT_SUBMODULES)
+ endif
+endif
+
 # Do not accept to download git submodule if not using the git method
 ifneq ($$($(2)_GIT_SUBMODULES),)
  ifneq ($$($(2)_SITE_METHOD),git)
@@ -607,6 +615,76 @@ endif
 $(2)_REDISTRIBUTE		?= YES
 
 $(2)_REDIST_SOURCES_DIR = $$(REDIST_SOURCES_DIR_$$(call UPPERCASE,$(4)))/$$($(2)_BASENAME_RAW)
+
+# If any of the <pkg>_CPE_ID_* variables are set, we assume the CPE ID
+# information is valid for this package.
+ifneq ($$($(2)_CPE_ID_VENDOR)$$($(2)_CPE_ID_PRODUCT)$$($(2)_CPE_ID_VERSION)$$($(2)_CPE_ID_UPDATE)$$($(2)_CPE_ID_PREFIX),)
+$(2)_CPE_ID_VALID = YES
+endif
+
+# When we're a host package, make sure to use the variables of the
+# corresponding target package, if any.
+ifneq ($$($(3)_CPE_ID_VENDOR)$$($(3)_CPE_ID_PRODUCT)$$($(3)_CPE_ID_VERSION)$$($(3)_CPE_ID_UPDATE)$$($(3)_CPE_ID_PREFIX),)
+$(2)_CPE_ID_VALID = YES
+endif
+
+# If the CPE ID is valid for the target package so it is for the host
+# package
+ifndef $(2)_CPE_ID_VALID
+ ifdef $(3)_CPE_ID_VALID
+   $(2)_CPE_ID_VALID = $$($(3)_CPE_ID_VALID)
+ endif
+endif
+
+ifeq ($$($(2)_CPE_ID_VALID),YES)
+ # CPE_ID_VENDOR
+ ifndef $(2)_CPE_ID_VENDOR
+  ifdef $(3)_CPE_ID_VENDOR
+   $(2)_CPE_ID_VENDOR = $$($(3)_CPE_ID_VENDOR)
+  else
+   $(2)_CPE_ID_VENDOR = $$($(2)_RAWNAME)_project
+ endif
+ endif
+
+ # CPE_ID_PRODUCT
+ ifndef $(2)_CPE_ID_PRODUCT
+  ifdef $(3)_CPE_ID_PRODUCT
+   $(2)_CPE_ID_PRODUCT = $$($(3)_CPE_ID_PRODUCT)
+  else
+   $(2)_CPE_ID_PRODUCT = $$($(2)_RAWNAME)
+  endif
+ endif
+
+ # CPE_ID_VERSION
+ ifndef $(2)_CPE_ID_VERSION
+  ifdef $(3)_CPE_ID_VERSION
+   $(2)_CPE_ID_VERSION = $$($(3)_CPE_ID_VERSION)
+  else
+   $(2)_CPE_ID_VERSION = $$($(2)_VERSION)
+  endif
+ endif
+
+ # CPE_ID_UPDATE
+ ifndef $(2)_CPE_ID_UPDATE
+  ifdef $(3)_CPE_ID_UPDATE
+   $(2)_CPE_ID_UPDATE = $$($(3)_CPE_ID_UPDATE)
+  else
+   $(2)_CPE_ID_UPDATE = *
+  endif
+ endif
+
+ # CPE_ID_PREFIX
+ ifndef $(2)_CPE_ID_PREFIX
+  ifdef $(3)_CPE_ID_PREFIX
+   $(2)_CPE_ID_PREFIX = $$($(3)_CPE_ID_PREFIX)
+  else
+   $(2)_CPE_ID_PREFIX = cpe:2.3:a
+  endif
+ endif
+
+ # Calculate complete CPE ID
+ $(2)_CPE_ID = $$($(2)_CPE_ID_PREFIX):$$($(2)_CPE_ID_VENDOR):$$($(2)_CPE_ID_PRODUCT):$$($(2)_CPE_ID_VERSION):$$($(2)_CPE_ID_UPDATE):*:*:*:*:*:*
+endif # ifeq ($$($(2)_CPE_ID_VALID),YES)
 
 # When a target package is a toolchain dependency set this variable to
 # 'NO' so the 'toolchain' dependency is not added to prevent a circular
@@ -750,6 +828,7 @@ endif
 # human-friendly targets and target sequencing
 $(1):			$(1)-install
 $(1)-install:		$$($(2)_TARGET_INSTALL)
+$$($(2)_TARGET_INSTALL): $$($(2)_TARGET_BUILD)
 
 ifeq ($$($(2)_TYPE),host)
 $$($(2)_TARGET_INSTALL): $$($(2)_TARGET_INSTALL_HOST)

@@ -11,7 +11,7 @@ config BR2_PACKAGE_QT5BASE
 	  contains the base Qt libraries: QtCore, QtNetwork, QtGui,
 	  QtWidgets, etc.
 
-	  http://qt.io
+	  https://qt.io
 
 if BR2_PACKAGE_QT5BASE
 
@@ -262,6 +262,11 @@ config BR2_PACKAGE_QT5BASE_PNG
 	  library.
 
 endif
+
+config BR2_PACKAGE_QT5BASE_SYSLOG
+	bool "syslog support"
+	help
+	  Logs to the standard UNIX logging mechanism.
 
 config BR2_PACKAGE_QT5BASE_DBUS
 	bool "DBus module"
